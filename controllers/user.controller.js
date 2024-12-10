@@ -105,7 +105,7 @@ const updateUserStatus = asyncHandler(async (req, res) => {
   //   query.email = email;
   // }
 
-  const user = await User.findOne({email});
+  const user = await User.findOne({ email });
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -114,7 +114,7 @@ const updateUserStatus = asyncHandler(async (req, res) => {
   const newStatus = user.status == 0 ? 1 : 0;
 
   const updatedUser = await User.findOneAndUpdate(
-    {email},
+    { email },
     { status: newStatus },
     { new: true }
   );
