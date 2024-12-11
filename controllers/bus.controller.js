@@ -6,6 +6,15 @@ import { Route } from "../models/routes.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { BusFirebase } from "../utils/configs.js";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+} from "firebase/firestore";
 
 const addBus = asyncHandler(async (req, res) => {
   const { name, number, lat, long, driverId, driverName, active } = req.body;
@@ -244,7 +253,7 @@ const getRoutesAndStops = asyncHandler(async (req, res) => {
     throw new ApiError(404, "No Bus found");
   }
 
-  const routes = await Route.find({busId: busId });
+  const routes = await Route.find({ busId: busId });
 
   if (routes.length === 0) {
     throw new ApiError(404, "No Routes found");
@@ -259,7 +268,7 @@ const getRoutesAndStops = asyncHandler(async (req, res) => {
     throw new ApiError(404, "No Stops found for the Route");
   }
 
-  return res.status(200).json({routes, stops});
+  return res.status(200).json({ routes, stops });
   // .json(new ApiResponse(200, users, "User data fetched successfully"));
 });
 
@@ -321,6 +330,29 @@ const updateBusLocation = asyncHandler(async (req, res) => {
   bus.long = long;
 
   await bus.save();
+
+  // Firebase update
+
+  // const db = getFirestore();
+
+  // const busesCollection = collection(db, "buses");
+
+  const busQuery = query(BusFirebase, where("id", "==", busId));
+
+  const querySnapshot = await getDocs(busQuery);
+
+  if (querySnapshot.empty) {
+    return res
+      .status(404)
+      .json({ message: "No bus found with the provided busId" });
+  }
+
+  const busDoc = querySnapshot.docs[0];
+
+  await updateDoc(busDoc.ref, {
+    lat: lat,
+    long: long,
+  });
 
   return res
     .status(200)
